@@ -38,57 +38,67 @@ type GLESolver1
     L::Float64
     N::Int
     Δt::Float64
-    α::Vector{Complex{Float64}}
-    w::Vector{Float64}
-    f::Vector{Complex{Float64}}
+    δ::Vector{Complex{Float64}}
+    g::Vector{Complex{Float64}}
     a1::Vector{Complex{Float64}}
 end
 
 function GLESolver1(L, N, Δt, k::GLECoeffs)
     
-    α = zeros(Complex{Float64}, N)
+    δ = zeros(Complex{Float64}, N)
     
     for i = 1:N
         w = π/L*(i-1)
-        α[i] = 1.0 - Δt(k[1] - k[2]*w^2)
+        δ[i] = 1.0 - Δt*(k[1] - k[2]*w^2)
     end
 
-    f = zeros(Complex{Float64}, N)
+    g = zeros(Complex{Float64}, N)
     a1 = zeros(Complex{Float64}, N)
-    GLESover1(L, N, Δt, α, w, f, a1)
+    GLESolver1(L, N, Δt, δ, g, a1)
 end
 
-function gle_step!(slv::GLESolver1, k::GLECoeffs, a::Vector{Complex{Float64}})
+nmodes(slv::GLESolver1) = slv.N
+nodes(slv::GLESolver1) = dct_nodes(slv.N, slv.L)
+
+
+function gle_init!(slv::GLESolver1, a::Vector{Complex{Float64}})
+
+    copy!(slv.a1, a)
+    return nothing
+end
+
+function gle_step!(slv::GLESolver1, k::GLECoeffs, a₀::AbstractVector{Complex{Float64}},
+                   a₁::AbstractVector{Complex{Float64}})
     # Calcularo f
-    f = slv.f
-    a1 = slv.a1
+    g = slv.g
     dt = slv.Δt
     N = slv.N
-    copy!(a1, a)
-    idct!(a1)
+    δ = slv.δ
+    
+    copy!(a₁, a₀)
+    idct!(a₁)
     
     for i = 1:N
-        f[i] = k[3] * abs(a1[i])^2 * a1[i]
+        g[i] = k[3] * abs(a₁[i])^2 * a₁[i]
     end
 
-    dct!(f)
-    α = slv.α
+    dct!(g)
     for i = 1:N
-        a1[i] = ( a[i] + dt*f[i] ) / α[i]
+        a₁[i] = ( a₀[i] + dt*g[i] ) / δ[i]
     end
 
 
-    idct!(a1)
+    idct!(a₁)
     for i = 1:N
-        f[i] = k[3] * abs(a1[i])^2 * a1[i]
+        g[i] = k[3] * abs(a₁[i])^2 * a₁[i]
     end
-    dct!(f)
+    dct!(g)
     
     for i = 1:N
-        a[i] = ( a[i] + dt*f[i] ) / α[i]
+        a₁[i] = ( a₀[i] + dt*g[i] ) / δ[i]
     end
 
-    return a
+    return nothing
     
 end
 
