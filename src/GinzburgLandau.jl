@@ -110,6 +110,7 @@ type GLEAdamsBashforth
     s::Int
     Δt::Float64
     f::Vector{Vector{Complex{Float64}}
+    a₀::Vector{Complex{Float64}}
     idx::Vector{Integer}
     step::Int
     function GLEAdamsBashforth(L, N, s, Δt)
@@ -117,7 +118,8 @@ type GLEAdamsBashforth
         for i = 1:s
             f[i] = zeros(Complex{Float64}, N)
         end
-        new(L, N, s, Δt, f, zeros(Int, s), 0)
+        a₀ = zeros(Complex{Float64}, N)
+        new(L, N, s, Δt, f, a₀, zeros(Int, s), 0)
     end
 
     
@@ -135,9 +137,10 @@ function init_gle!(slv::GLEAdamsBashforth, a::AbstractVector)
     for i = 1:s
         fill!(slv.f[i], 0)
     end
-    
+    fill!(slv.a₀, a)
     
 end
+
 
 function simple_step!(slv::GLEAdamsBashforth, a::AbstractVector{Complex{Float64}})
     
