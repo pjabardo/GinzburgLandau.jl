@@ -64,6 +64,7 @@ end
 
 nmodes(slv::GLESolver1) = slv.N
 nodes(slv::GLESolver1) = dct_nodes(slv.N, slv.L)
+tstep(slv::GLESolver1, i) = (i-1)*slv.Δt
 
 
 function gle_step!(slv::GLESolver1, k::GLECoeffs, a₀::AbstractVector{Complex{Float64}},
@@ -103,14 +104,43 @@ end
 
 
 
-type GLESolverAdams
+type GLEAdamsBashforth
     L::Float64
     N::Int
+    s::Int
     Δt::Float64
-    δ::Vector{Complex{Float64}}
-    g::Vector{Complex{Float64}}
-    a1::Vector{Complex{Float64}}
-end    
+    f::Vector{Vector{Complex{Float64}}
+    idx::Vector{Integer}
+    step::Int
+    function GLEAdamsBashforth(L, N, s, Δt)
+        f = Vector{Vector{Complex{Float64}}}(s)
+        for i = 1:s
+            f[i] = zeros(Complex{Float64}, N)
+        end
+        new(L, N, s, Δt, f, zeros(Int, s), 0)
+    end
+
+    
+end
+nmodes(slv::GLEAdamsBashforth) = slv.N
+nodes(slv::GLEAdamsBashforth) = dct_nodes(slv.N, slv.L)
+tstep(slv::GLEAdamsBashforth, i) = (i-1)*slv.Δt
+nstep(slv::GLEAdamsBashforth) = slv.s
+
+
+function init_gle!(slv::GLEAdamsBashforth, a::AbstractVector)
+    s = nstep(slv)
+    slv.step = 0
+    fill!(slv.idx, 0)
+    for i = 1:s
+        fill!(slv.f[i], 0)
+    end
+    
+    
+end
+
+function simple_step!(slv::GLEAdamsBashforth, a::AbstractVector{Complex{Float64}})
+    
 
                     
 end # module
